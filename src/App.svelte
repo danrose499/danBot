@@ -3,6 +3,15 @@
   import QA from './lib/QA.svelte'
   const title = 'danBot'
   const subtitle = 'Ask me anything'
+  let speaking = false
+  let speakTimer
+  function onAnswering(e) {
+    const answer = e?.detail?.item?.answer || ''
+    const dur = Math.min(6000, Math.max(1500, answer.length * 35))
+    speaking = true
+    clearTimeout(speakTimer)
+    speakTimer = setTimeout(() => { speaking = false }, dur)
+  }
 </script>
 
 <main class="wrap">
@@ -10,8 +19,8 @@
     <h1>{title}</h1>
     <p>{subtitle}</p>
   </header>
-  <FaceViewer />
-  <QA />
+  <FaceViewer {speaking} />
+  <QA on:answering={onAnswering} />
   <footer class="foot">
     <a href="https://github.com/danrose499/danBot" target="_blank" rel="noreferrer">GitHub</a>
   </footer>
@@ -43,6 +52,7 @@
   }
   .foot {
     margin-top: auto;
+    margin-bottom: 5rem;
     opacity: 0.8;
   }
   .foot a { color: #7aa2ff; }

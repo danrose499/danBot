@@ -1,8 +1,11 @@
 <script>
   import { qa } from './qa.js';
+  import { createEventDispatcher } from 'svelte';
+  const dispatch = createEventDispatcher();
   let selected = qa[0];
   function select(item) {
     selected = item;
+    dispatch('answering', { item });
   }
 </script>
 
@@ -23,7 +26,7 @@
 
 <style>
   .qa {
-    width: 100%;
+    width: 75%;
     max-width: none;
     margin: 0.5rem auto;
     padding: 0 0 0.75rem;

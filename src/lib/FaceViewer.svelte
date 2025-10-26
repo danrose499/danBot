@@ -8,11 +8,33 @@
   let model;
   let frameId;
 
+  // Animation state
+  let clock;
+
   let targetRotX = 0;
   let targetRotY = 0;
   let currentRotX = 0;
   let currentRotY = 0;
   let t = 0;
+
+  // Procedural face controls
+  export let speaking = false;
+  export let autoBlink = true;
+
+  // Morph target tracking
+  const morphMeshes = [];
+  let idx = {
+    EyeBlinkLeft: null,
+    EyeBlinkRight: null,
+    Blink: null,
+    JawOpen: null,
+    MouthOpen: null
+  };
+
+  // Blink state
+  let nextBlinkIn = 0; // seconds
+  let blinkTime = 0;   // 0..1 progress of current blink
+  let isBlinking = false;
 
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   export let src = '/face.glb';
@@ -40,7 +62,8 @@
 
   function animate() {
     frameId = requestAnimationFrame(animate);
-    t += 0.01;
+    const dt = Math.min(0.05, clock?.getDelta?.() || 0.016);
+    t += dt;
 
     // smooth follow
     currentRotX += (targetRotX - currentRotX) * 0.08;
@@ -51,6 +74,53 @@
       model.rotation.y = currentRotY;
       // subtle float
       model.position.y = Math.sin(t) * 0.03;
+    }
+
+    // Procedural facial animation (morph targets only, if available)
+    if (morphMeshes.length) {
+      // Blink logic
+      if (autoBlink) {
+        nextBlinkIn -= dt;
+        if (!isBlinking && nextBlinkIn <= 0) {
+          isBlinking = true;
+          blinkTime = 0;
+        }
+        if (isBlinking) {
+          const blinkDuration = 0.18; // seconds
+          blinkTime += dt / blinkDuration;
+          const x = Math.min(1, blinkTime);
+          // fast ease-in-out curve
+          const ease = x < 0.5 ? (2 * x * x) : (1 - Math.pow(-2 * x + 2, 2) / 2);
+          const blinkVal = 1.0 * ease; // 0..1
+          setMorphValue('Blink', blinkVal);
+          setMorphValue('EyeBlinkLeft', blinkVal);
+          setMorphValue('EyeBlinkRight', blinkVal);
+          if (blinkTime >= 1) {
+            isBlinking = false;
+            // reset influences to open
+            setMorphValue('Blink', 0);
+            setMorphValue('EyeBlinkLeft', 0);
+            setMorphValue('EyeBlinkRight', 0);
+            // schedule next blink in 3-7s
+            nextBlinkIn = 3 + Math.random() * 4;
+          }
+        }
+      }
+
+      // Speaking / mouth movement
+      const mouthTarget = idx.JawOpen != null ? 'JawOpen' : (idx.MouthOpen != null ? 'MouthOpen' : null);
+      if (mouthTarget) {
+        const current = getMorphValue(mouthTarget);
+        let target = 0;
+        if (speaking) {
+          // Layered sines pseudo-random mouth movement
+          const n = Math.abs(Math.sin(t * 7) * 0.6 + Math.sin(t * 13.1 + 1.7) * 0.4);
+          target = Math.min(1, Math.max(0, n));
+          target = target * 0.7; // limit openness
+        }
+        const newVal = current + (target - current) * 0.25; // smooth
+        setMorphValue(mouthTarget, newVal);
+      }
     }
 
     renderer.render(scene, camera);
@@ -139,6 +209,30 @@
         camera.position.set(0, 0, dist);
         camera.lookAt(0, 0, 0);
         scene.add(model);
+
+        // Detect morph targets
+        morphMeshes.length = 0;
+        idx = { EyeBlinkLeft: null, EyeBlinkRight: null, Blink: null, JawOpen: null, MouthOpen: null };
+        model.traverse((o) => {
+          if (o && o.isMesh && o.morphTargetDictionary && o.morphTargetInfluences) {
+            const dict = o.morphTargetDictionary;
+            const found = {};
+            for (const key in dict) {
+              const k = key.toLowerCase();
+              if (k.includes('blink') && !('Blink' in found)) found['Blink'] = dict[key];
+              if (k === 'eyeblinkleft') found['EyeBlinkLeft'] = dict[key];
+              if (k === 'eyeblinkright') found['EyeBlinkRight'] = dict[key];
+              if ((k.includes('jawopen') || k === 'jawopen') && !('JawOpen' in found)) found['JawOpen'] = dict[key];
+              if ((k.includes('mouthopen') || k === 'mouthopen') && !('MouthOpen' in found)) found['MouthOpen'] = dict[key];
+            }
+            // Record any indices we discovered
+            for (const n in found) {
+              if (idx[n] == null) idx[n] = found[n];
+            }
+            // Only keep meshes that have any of our targets
+            if (Object.keys(found).length) morphMeshes.push(o);
+          }
+        });
       },
       undefined,
       (err) => {
@@ -149,6 +243,9 @@
     resize();
     window.addEventListener('resize', resize);
     container.addEventListener('pointermove', onPointerMove);
+    clock = new THREE.Clock();
+    // schedule initial blink
+    nextBlinkIn = 1.5 + Math.random() * 2.0;
     animate();
   }
 
@@ -163,6 +260,26 @@
     renderer?.dispose();
     pmrem?.dispose?.();
   });
+
+  function setMorphValue(name, value) {
+    if (!morphMeshes.length) return;
+    for (const m of morphMeshes) {
+      const dict = m.morphTargetDictionary;
+      const infl = m.morphTargetInfluences;
+      if (!dict || !infl) continue;
+      const i = dict[name] ?? idx[name];
+      if (i != null && infl[i] != null) infl[i] = value;
+    }
+  }
+
+  function getMorphValue(name) {
+    if (!morphMeshes.length) return 0;
+    const m = morphMeshes[0];
+    const dict = m.morphTargetDictionary;
+    const infl = m.morphTargetInfluences;
+    const i = dict?.[name] ?? idx[name];
+    return i != null && infl?.[i] != null ? infl[i] : 0;
+  }
 </script>
 
 <div class="viewer" bind:this={container}>
