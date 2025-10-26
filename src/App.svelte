@@ -21,16 +21,17 @@
   .wrap {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    min-height: 100vh;
+    align-items: stretch;
+    gap: 0.75rem;
+    min-height: 100svh;
     width: 100%;
-    margin: 0 auto;
-    padding: 1.5rem 1rem 2rem;
+    margin: 0;
+    padding: 0;
     text-align: center;
     background: radial-gradient(1200px 600px at 50% -10%, rgba(47,109,246,0.22), transparent 60%),
                 linear-gradient(180deg, #0b0e14 0%, #0b0e14 100%);
   }
+  .hero, .foot { width: 100%; }
   .hero h1 {
     margin: 0.5rem 0 0.25rem;
     font-size: clamp(1.8rem, 3.5vw, 3rem);

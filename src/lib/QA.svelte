@@ -24,16 +24,16 @@
 <style>
   .qa {
     width: 100%;
-    max-width: 900px;
-    margin: 2rem auto;
-    padding: 0 1rem 3rem;
+    max-width: none;
+    margin: 0.5rem auto;
+    padding: 0 0 0.75rem;
   }
   .chips {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
     justify-content: center;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
   }
   button {
     background: #0f1115;

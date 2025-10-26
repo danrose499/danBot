@@ -15,7 +15,8 @@
   let t = 0;
 
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
-  const modelPath = import.meta.env.BASE_URL + 'face.glb?v=' + Date.now();
+  export let src = '/face.glb';
+  export let removeHands = false;
 
   function resize() {
     if (!container || !renderer || !camera) return;
@@ -34,7 +35,7 @@
     const dy = (y - 0.5) * 2; // -1..1
 
     targetRotY = dx * 0.5; // yaw
-    targetRotX = -dy * 0.3; // pitch
+    targetRotX = dy * 0.3; // pitch (invert fixed)
   }
 
   function animate() {
@@ -81,10 +82,18 @@
     dir.castShadow = false;
     scene.add(dir);
 
-    const [{ GLTFLoader }, { DRACOLoader }, { RoomEnvironment }] = await Promise.all([
+    const [
+      { GLTFLoader },
+      { DRACOLoader },
+      { RoomEnvironment },
+      { KTX2Loader },
+      { MeshoptDecoder }
+    ] = await Promise.all([
       import('three/examples/jsm/loaders/GLTFLoader.js'),
       import('three/examples/jsm/loaders/DRACOLoader.js'),
       import('three/examples/jsm/environments/RoomEnvironment.js'),
+      import('three/examples/jsm/loaders/KTX2Loader.js'),
+      import('three/examples/jsm/libs/meshopt_decoder.module.js')
     ]);
 
     pmrem = new THREE.PMREMGenerator(renderer);
@@ -95,6 +104,10 @@
 
     const loader = new GLTFLoader();
     loader.setDRACOLoader(draco);
+    const ktx2 = new KTX2Loader().setTranscoderPath('https://unpkg.com/three/examples/jsm/libs/basis/').detectSupport(renderer);
+    loader.setKTX2Loader(ktx2);
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    const modelPath = (import.meta.env.BASE_URL || '/') + (src?.startsWith('/') ? src.slice(1) : src) + (src?.includes('?') ? '' : `?v=${Date.now()}`);
     loader.load(
       modelPath,
       (gltf) => {
@@ -108,13 +121,21 @@
         model.position.sub(center); // center at origin
         const maxDim = Math.max(size.x, size.y, size.z);
         const safeDim = Number.isFinite(maxDim) && maxDim > 0 ? maxDim : 1;
-        const scale = 1.2 / safeDim;
+        const scale = 1.6 / safeDim;
         model.scale.setScalar(scale);
+
+        if (removeHands) {
+          const toRemove = [];
+          model.traverse((o) => {
+            if (o && o.name && /hand/i.test(o.name)) toRemove.push(o);
+          });
+          toRemove.forEach((n) => n.parent && n.parent.remove(n));
+        }
 
         const fov = (camera.fov * Math.PI) / 180;
         const fitHeight = size.y * scale;
         const fitWidth = size.x * scale;
-        const dist = Math.max(fitHeight, fitWidth) / (2 * Math.tan(fov / 2)) + 0.5;
+        const dist = Math.max(fitHeight, fitWidth) / (2 * Math.tan(fov / 2)) + 0.2;
         camera.position.set(0, 0, dist);
         camera.lookAt(0, 0, 0);
         scene.add(model);
@@ -150,8 +171,8 @@
 
 <style>
   .viewer {
-    width: min(700px, 100%);
-    height: min(70vh, 70svh);
+    width: 100%;
+    height: min(60vh, 60svh);
     margin: 0 auto;
   }
   :global(canvas) {
