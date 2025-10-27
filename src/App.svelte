@@ -1,10 +1,13 @@
 <script>
+  import { onMount, onDestroy } from 'svelte'
   import FaceViewer from './lib/FaceViewer.svelte'
   import QA from './lib/QA.svelte'
   const title = 'danBot'
   const subtitle = 'Ask me anything'
   let speaking = false
   let speakTimer
+  let viewerRef
+  let clickHandler
   function onAnswering(e) {
     const answer = e?.detail?.item?.answer || ''
     const dur = Math.min(6000, Math.max(1500, answer.length * 35))
@@ -12,6 +15,21 @@
     clearTimeout(speakTimer)
     speakTimer = setTimeout(() => { speaking = false }, dur)
   }
+
+  onMount(() => {
+    clickHandler = (e) => {
+      const target = e.target
+      if (target && typeof target.closest === 'function') {
+        if (target.closest('.qa')) return
+      }
+      viewerRef?.blinkNow?.()
+    }
+    document.addEventListener('click', clickHandler)
+  })
+
+  onDestroy(() => {
+    if (clickHandler) document.removeEventListener('click', clickHandler)
+  })
 </script>
 
 <main class="wrap">
@@ -19,7 +37,7 @@
     <h1>{title}</h1>
     <p>{subtitle}</p>
   </header>
-  <FaceViewer {speaking} />
+  <FaceViewer bind:this={viewerRef} {speaking} />
   <QA on:answering={onAnswering} />
   <footer class="foot">
     <a href="https://github.com/danrose499/danBot" target="_blank" rel="noreferrer">GitHub</a>

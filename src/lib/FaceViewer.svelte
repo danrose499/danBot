@@ -38,6 +38,7 @@
 
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   export let src = '/face.glb';
+  export let blinkKeys = []; // optional explicit morph names for eyelids
   export let removeHands = false;
 
   function resize() {
@@ -85,25 +86,21 @@
           isBlinking = true;
           blinkTime = 0;
         }
-        if (isBlinking) {
-          const blinkDuration = 0.18; // seconds
-          blinkTime += dt / blinkDuration;
-          const x = Math.min(1, blinkTime);
-          // fast ease-in-out curve
-          const ease = x < 0.5 ? (2 * x * x) : (1 - Math.pow(-2 * x + 2, 2) / 2);
-          const blinkVal = 1.0 * ease; // 0..1
-          setMorphValue('Blink', blinkVal);
-          setMorphValue('EyeBlinkLeft', blinkVal);
-          setMorphValue('EyeBlinkRight', blinkVal);
-          if (blinkTime >= 1) {
-            isBlinking = false;
-            // reset influences to open
-            setMorphValue('Blink', 0);
-            setMorphValue('EyeBlinkLeft', 0);
-            setMorphValue('EyeBlinkRight', 0);
-            // schedule next blink in 3-7s
-            nextBlinkIn = 3 + Math.random() * 4;
-          }
+      }
+      if (isBlinking) {
+        const blinkDuration = 0.18; // seconds
+        blinkTime += dt / blinkDuration;
+        const x = Math.min(1, blinkTime);
+        // fast ease-in-out curve
+        const ease = x < 0.5 ? (2 * x * x) : (1 - Math.pow(-2 * x + 2, 2) / 2);
+        const blinkVal = 1.0 * ease; // 0..1
+        applyBlinkValue(blinkVal);
+        if (blinkTime >= 1) {
+          isBlinking = false;
+          // reset influences to open
+          applyBlinkValue(0);
+          // schedule next blink in 3-7s
+          nextBlinkIn = 3 + Math.random() * 4;
         }
       }
 
@@ -213,26 +210,57 @@
         // Detect morph targets
         morphMeshes.length = 0;
         idx = { EyeBlinkLeft: null, EyeBlinkRight: null, Blink: null, JawOpen: null, MouthOpen: null };
+        const allKeys = new Set();
         model.traverse((o) => {
           if (o && o.isMesh && o.morphTargetDictionary && o.morphTargetInfluences) {
             const dict = o.morphTargetDictionary;
             const found = {};
+            // per-mesh blink indices
+            const any = [];
+            const left = [];
+            const right = [];
             for (const key in dict) {
               const k = key.toLowerCase();
-              if (k.includes('blink') && !('Blink' in found)) found['Blink'] = dict[key];
-              if (k === 'eyeblinkleft') found['EyeBlinkLeft'] = dict[key];
-              if (k === 'eyeblinkright') found['EyeBlinkRight'] = dict[key];
+              allKeys.add(key);
+              const byProp = Array.isArray(blinkKeys) && blinkKeys.some((n) => n && n.toLowerCase() === k);
+              const isBlinkAny = byProp || k.includes('blink') || (k.includes('eye') && (k.includes('close') || k.includes('shut') || k.includes('lid')));
+              if (isBlinkAny) any.push(dict[key]);
+              if ((k === 'eyeblinkleft' || (k.includes('blink') && (k.includes('left') || k.endsWith('_l') || k.endsWith('.l') || k.includes('l_')))) ) left.push(dict[key]);
+              if ((k === 'eyeblinkright' || (k.includes('blink') && (k.includes('right') || k.endsWith('_r') || k.endsWith('.r') || k.includes('r_')))) ) right.push(dict[key]);
+              if (isBlinkAny && !('Blink' in found)) found['Blink'] = dict[key];
+              if (left.length && !('EyeBlinkLeft' in found)) found['EyeBlinkLeft'] = left[0];
+              if (right.length && !('EyeBlinkRight' in found)) found['EyeBlinkRight'] = right[0];
               if ((k.includes('jawopen') || k === 'jawopen') && !('JawOpen' in found)) found['JawOpen'] = dict[key];
               if ((k.includes('mouthopen') || k === 'mouthopen') && !('MouthOpen' in found)) found['MouthOpen'] = dict[key];
             }
+            // Enable morph targets on material if supported
+            if (Array.isArray(o.material)) {
+              for (const mat of o.material) if (mat && 'morphTargets' in mat) mat.morphTargets = true;
+            } else if (o.material && 'morphTargets' in o.material) {
+              o.material.morphTargets = true;
+            }
+            // Save per-mesh blink indices for direct application
+            o.userData.__blinkAny = any;
+            o.userData.__blinkLeft = left;
+            o.userData.__blinkRight = right;
             // Record any indices we discovered
             for (const n in found) {
               if (idx[n] == null) idx[n] = found[n];
             }
             // Only keep meshes that have any of our targets
-            if (Object.keys(found).length) morphMeshes.push(o);
+            if (any.length || left.length || right.length || Object.keys(found).length) morphMeshes.push(o);
           }
         });
+        const totalBlinkSlots = morphMeshes.reduce((acc, m) => acc + (m.userData.__blinkAny?.length||0) + (m.userData.__blinkLeft?.length||0) + (m.userData.__blinkRight?.length||0), 0);
+        if (!totalBlinkSlots) {
+          console.warn('No morph targets related to eyelid/blink were found on the loaded model. Available morph keys:', Array.from(allKeys));
+          fallbackBlink = true;
+        } else {
+          console.log(`[FaceViewer] Blink targets: meshes=${morphMeshes.length}, slots=${totalBlinkSlots}. All keys:`, Array.from(allKeys));
+          fallbackBlink = false;
+        }
+
+        // (camera fit already computed above before detection)
       },
       undefined,
       (err) => {
@@ -280,7 +308,38 @@
     const i = dict?.[name] ?? idx[name];
     return i != null && infl?.[i] != null ? infl[i] : 0;
   }
-</script>
+
+  export function blinkNow() {
+    if (!morphMeshes.length) return;
+    isBlinking = true;
+    blinkTime = 0;
+    nextBlinkIn = 1 + Math.random() * 2;
+  }
+
+  function applyBlinkValue(v) {
+    if (!morphMeshes.length) return;
+    for (const m of morphMeshes) {
+      const infl = m.morphTargetInfluences;
+      const dict = m.morphTargetDictionary;
+      if (!infl || !dict) continue;
+      const any = m.userData.__blinkAny || [];
+      const left = m.userData.__blinkLeft || [];
+      const right = m.userData.__blinkRight || [];
+      if (any.length + left.length + right.length === 0) {
+        const iAny = dict['Blink'] ?? idx.Blink;
+        const iL = dict['EyeBlinkLeft'] ?? idx.EyeBlinkLeft;
+        const iR = dict['EyeBlinkRight'] ?? idx.EyeBlinkRight;
+        if (iAny != null && infl[iAny] != null) infl[iAny] = v;
+        if (iL != null && infl[iL] != null) infl[iL] = v;
+        if (iR != null && infl[iR] != null) infl[iR] = v;
+        continue;
+      }
+      for (const i of any) if (infl[i] != null) infl[i] = v;
+      for (const i of left) if (infl[i] != null) infl[i] = v;
+      for (const i of right) if (infl[i] != null) infl[i] = v;
+    }
+  }
+  </script>
 
 <div class="viewer" bind:this={container}>
   <!-- three.js canvas injected -->
