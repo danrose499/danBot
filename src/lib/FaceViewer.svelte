@@ -35,6 +35,7 @@
   let nextBlinkIn = 0; // seconds
   let blinkTime = 0;   // 0..1 progress of current blink
   let isBlinking = false;
+  let fallbackBlink = false;
 
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   export let src = '/face.glb';
