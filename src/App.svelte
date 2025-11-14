@@ -39,9 +39,9 @@
   </header>
   <FaceViewer bind:this={viewerRef} {speaking} />
   <QA on:answering={onAnswering} />
-  <footer class="foot">
+  <!-- <footer class="foot">
     <a href="https://github.com/danrose499/danBot" target="_blank" rel="noreferrer">GitHub</a>
-  </footer>
+  </footer> -->
 </main>
 
 <style>
