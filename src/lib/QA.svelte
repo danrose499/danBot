@@ -76,15 +76,20 @@
 
 <style>
   .qa {
-    width: 75%;
-    max-width: none;
-    margin: 0.5rem auto;
-    padding: 0 0 0.75rem;
+    width: min(800px, 92vw);
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+    position: relative;
   }
   .chat {
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -92,8 +97,8 @@
     border: 1px solid #2a2f3a;
     border-radius: 12px;
     padding: 1rem;
-    height: min(40vh, 28rem);
-    overflow-y: auto;
+    margin-bottom: 1rem;
+    min-height: 0; /* Crucial for flex children to respect overflow */
   }
   .msg {
     display: flex;
@@ -122,14 +127,24 @@
   .input {
     display: flex;
     gap: 0.5rem;
+    width: 100%;
+    flex-shrink: 0;
+    background: rgba(11, 14, 20, 0.9);
+    padding: 0.5rem 0;
+    backdrop-filter: blur(5px);
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
   }
   .input input {
-    flex: 1;
+    flex: 1 1 auto;
     background: #0f1115;
     border: 1px solid #2a2f3a;
     color: #e6e8eb;
     padding: 0.6rem 0.9rem;
     border-radius: 10px;
+    min-width: 0;
+    box-sizing: border-box;
   }
   .input button {
     background: #2f6df6;
@@ -138,6 +153,8 @@
     padding: 0.6rem 0.9rem;
     border-radius: 10px;
     font-size: 0.95rem;
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
   .input button[disabled] {
     opacity: 0.6;

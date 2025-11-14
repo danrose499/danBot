@@ -48,15 +48,17 @@
   .wrap {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    min-height: 100svh;
+    align-items: center;
+    min-height: 100vh;
+    height: 100vh;
     width: 100%;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
     text-align: center;
     background: radial-gradient(1200px 600px at 50% -10%, rgba(47,109,246,0.22), transparent 60%),
                 linear-gradient(180deg, #0b0e14 0%, #0b0e14 100%);
+    overflow: hidden;
   }
   .hero, .foot { width: 100%; }
   .hero h1 {

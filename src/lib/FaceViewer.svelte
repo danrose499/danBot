@@ -52,14 +52,15 @@
   }
 
   function onPointerMove(e) {
-    const rect = container.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width; // 0..1
-    const y = (e.clientY - rect.top) / rect.height; // 0..1
+    const vw = Math.max(1, window.innerWidth || 1);
+    const vh = Math.max(1, window.innerHeight || 1);
+    const x = e.clientX / vw; // 0..1 across viewport
+    const y = e.clientY / vh; // 0..1 across viewport
     const dx = (x - 0.5) * 2; // -1..1
     const dy = (y - 0.5) * 2; // -1..1
 
     targetRotY = dx * 0.5; // yaw
-    targetRotX = dy * 0.3; // pitch (invert fixed)
+    targetRotX = dy * 0.3; // pitch
   }
 
   function animate() {
@@ -271,7 +272,7 @@
 
     resize();
     window.addEventListener('resize', resize);
-    container.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointermove', onPointerMove);
     clock = new THREE.Clock();
     // schedule initial blink
     nextBlinkIn = 1.5 + Math.random() * 2.0;
@@ -285,7 +286,7 @@
   onDestroy(() => {
     cancelAnimationFrame(frameId);
     window.removeEventListener('resize', resize);
-    container?.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointermove', onPointerMove);
     renderer?.dispose();
     pmrem?.dispose?.();
   });
