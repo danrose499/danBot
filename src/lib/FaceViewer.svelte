@@ -41,6 +41,7 @@
   export let src = '/face-t3.glb';
   export let blinkKeys = []; // optional explicit morph names for eyelids
   export let removeHands = false;
+  export let scale = .08; // Scale factor for the model (0.8 = 80% of original size)
 
   function resize() {
     if (!container || !renderer || !camera) return;
@@ -75,8 +76,8 @@
     if (model) {
       model.rotation.x = currentRotX;
       model.rotation.y = currentRotY;
-      // subtle float
-      model.position.y = Math.sin(t) * 0.03;
+      // very subtle float with minimal movement
+      model.position.y = Math.sin(t * 0.8) * 0.003;
     }
 
     // Procedural facial animation (morph targets only, if available)
@@ -135,18 +136,18 @@
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 0.7;  // Reduced from 1.0
 
     container.appendChild(renderer.domElement);
 
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);  // Reduced intensity from 1.0
     hemi.position.set(0, 1, 0);
     scene.add(hemi);
 
-    const amb = new THREE.AmbientLight(0xffffff, 0.35);
+    const amb = new THREE.AmbientLight(0xffffff, 0.2);  // Reduced intensity from 0.35
     scene.add(amb);
 
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);  // Reduced intensity from 1.2
     dir.position.set(2, 2, 2);
     dir.castShadow = false;
     scene.add(dir);
@@ -183,15 +184,15 @@
         model = gltf.scene;
         // center and scale, then fit camera
         const box = new THREE.Box3().setFromObject(model);
-        const size = new THREE.Vector3();
-        const center = new THREE.Vector3();
-        box.getSize(size);
-        box.getCenter(center);
-        model.position.sub(center); // center at origin
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.set(-center.x, -center.y, -center.z);
+        
+        // Scale the model to a reasonable size
+        const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const safeDim = Number.isFinite(maxDim) && maxDim > 0 ? maxDim : 1;
-        const scale = 1.6 / safeDim;
-        model.scale.setScalar(scale);
+        const desiredSize = 1.5 * scale; // Apply the scale factor to the desired size
+        const modelScale = desiredSize / maxDim; 
+        model.scale.setScalar(modelScale);
 
         if (removeHands) {
           const toRemove = [];
