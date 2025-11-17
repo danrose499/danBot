@@ -38,7 +38,7 @@
   let fallbackBlink = false;
 
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
-  export let src = '/face.glb';
+  export let src = '/face-t3.glb';
   export let blinkKeys = []; // optional explicit morph names for eyelids
   export let removeHands = false;
 
