@@ -1,23 +1,84 @@
-# Svelte + Vite
+# 3D Face Viewer
 
-This template should help get you started developing with Svelte in Vite.
+A Svelte-based 3D face model viewer that allows you to view and interact with 3D face models in your browser. Built with Three.js and Vite.
 
-## Recommended IDE Setup
+![Screenshot of the application](public/screenshot.png)
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+## Features
 
-## Need an official Svelte framework?
+- Interactive 3D face model viewing
+- Smooth animations and transitions
+- Built with modern web technologies (Svelte, Three.js, Vite)
+- Responsive design that works on desktop and mobile
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+## Getting Started
 
-## Technical considerations
+### Prerequisites
 
-**Why use this over SvelteKit?**
+- Node.js (v16 or later)
+- npm (v7 or later) or yarn
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+### Installation
 
-This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/danBot.git
+   cd danBot
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+To start the development server:
+
+```bash
+npm run dev
+```
+
+Then open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Building for Production
+
+To create a production build:
+
+```bash
+npm run build
+```
+
+The built files will be in the `dist` directory.
+
+## Project Structure
+
+- `src/` - Source files
+  - `lib/` - Reusable components
+    - `FaceViewer.svelte` - 3D face viewer component
+    - `QA.svelte` - Question/Answer component
+    - `Counter.svelte` - Example counter component
+  - `App.svelte` - Main application component
+  - `main.js` - Application entry point
+- `public/` - Static assets (place your 3D models and screenshots here)
+
+## Adding 3D Models
+
+To add new 3D face models:
+
+1. Place your `.glb` or `.gltf` files in the `public/` directory
+2. Update the `FaceViewer.svelte` component to reference your new models
+
+## Technologies Used
+
+- [Svelte](https://svelte.dev/) - Frontend framework
+- [Three.js](https://threejs.org/) - 3D library
+- [Vite](https://vitejs.dev/) - Build tool and dev server
+- [GLTF Transform](https://github.com/donmccurdy/glTF-Transform) - For working with 3D models
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
 
