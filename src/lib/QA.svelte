@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
   let messages = [
-    { role: 'assistant', content: "Hi! I'm danBot. Ask me anything." }
+    { role: 'assistant', content: "Hi! I'm DanBot. Ask me anything about Daniel!" }
   ];
   let input = '';
   let loading = false;
@@ -84,11 +84,15 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    height: 100%;
+    max-height: 100%;
     box-sizing: border-box;
     position: relative;
   }
   .chat {
     flex: 1;
+    min-height: 350px;
+    max-height: 80vh;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -96,9 +100,25 @@
     background: rgba(255,255,255,0.03);
     border: 1px solid #2a2f3a;
     border-radius: 12px;
-    padding: 1rem;
+    padding: 1.25rem;
     margin-bottom: 1rem;
     min-height: 0; /* Crucial for flex children to respect overflow */
+    scrollbar-width: thin;
+    scrollbar-color: #2f6df6 #2a2f3a;
+  }
+  
+  .chat::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chat::-webkit-scrollbar-track {
+    background: #2a2f3a;
+    border-radius: 3px;
+  }
+  
+  .chat::-webkit-scrollbar-thumb {
+    background-color: #2f6df6;
+    border-radius: 3px;
   }
   .msg {
     display: flex;

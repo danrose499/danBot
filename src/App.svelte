@@ -2,8 +2,6 @@
   import { onMount, onDestroy } from 'svelte'
   import FaceViewer from './lib/FaceViewer.svelte'
   import QA from './lib/QA.svelte'
-  const title = 'danBot'
-  const subtitle = 'Ask me anything'
   let speaking = false
   let speakTimer
   let viewerRef
@@ -34,14 +32,10 @@
 
 <main class="wrap">
   <header class="hero">
-    <h1>{title}</h1>
-    <p>{subtitle}</p>
+    <h1>DanBot</h1>
   </header>
   <FaceViewer bind:this={viewerRef} {speaking} />
   <QA on:answering={onAnswering} />
-  <!-- <footer class="foot">
-    <a href="https://github.com/danrose499/danBot" target="_blank" rel="noreferrer">GitHub</a>
-  </footer> -->
 </main>
 
 <style>
@@ -65,6 +59,9 @@
     margin: 0.5rem 0 0.25rem;
     font-size: clamp(1.8rem, 3.5vw, 3rem);
     letter-spacing: 0.5px;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px rgba(100, 149, 237, 0.7);
   }
   .hero p {
     margin: 0;
